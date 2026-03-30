@@ -1,0 +1,954 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "KanbanFlow API",
+    "version": "1.0.0",
+    "description": "Backend API for KanbanFlow task management application"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "API base URL"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "username": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "avatar": { "type": "string", "nullable": true }
+        }
+      },
+      "Subtask": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "title": { "type": "string" },
+          "isCompleted": { "type": "boolean" }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "type": "string" },
+          "tag": {
+            "type": "string",
+            "nullable": true,
+            "enum": ["technical", "concept", "design", "blocker", "marketing", "deployment", "documentation", null]
+          },
+          "assignees": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "subtasks": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Subtask" }
+          },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Member": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "userId": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "username": { "type": "string" },
+          "role": {
+            "type": "string",
+            "enum": ["owner", "editor", "viewer"]
+          },
+          "avatar": { "type": "string", "nullable": true },
+          "joinedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Column": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "name": { "type": "string" },
+          "tasks": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Task" }
+          }
+        }
+      },
+      "Board": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "userId": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "members": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Member" }
+          },
+          "columns": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Column" }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "boardId": {
+        "name": "boardId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "The board ID"
+      },
+      "taskId": {
+        "name": "taskId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "The task ID"
+      },
+      "memberId": {
+        "name": "memberId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "The member ID"
+      },
+      "subtaskId": {
+        "name": "subtaskId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "The subtask ID"
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "description": "Returns the health status of the API.",
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/signup": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register a new user",
+        "description": "Creates a new user account and returns the user object with a JWT token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "email", "password"],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "minLength": 2,
+                    "description": "Username (minimum 2 characters)"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Valid email address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "description": "Password (minimum 6 characters)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": { "$ref": "#/components/schemas/User" },
+                    "token": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Log in a user",
+        "description": "Authenticates a user and returns the user object with a JWT token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": { "$ref": "#/components/schemas/User" },
+                    "token": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Log out the current user",
+        "description": "Invalidates the current user's session.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Logout successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Get current user profile",
+        "description": "Returns the authenticated user's profile information.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Auth"],
+        "summary": "Update current user profile",
+        "description": "Updates the authenticated user's username and/or email.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string" },
+                  "email": { "type": "string", "format": "email" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me/avatar": {
+      "put": {
+        "tags": ["Auth"],
+        "summary": "Update user avatar",
+        "description": "Uploads a new avatar image for the authenticated user.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["avatar"],
+                "properties": {
+                  "avatar": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Avatar image file"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Avatar updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "avatar": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "URL of the uploaded avatar"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards": {
+      "get": {
+        "tags": ["Boards"],
+        "summary": "Get all boards",
+        "description": "Returns all boards the authenticated user has access to.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Boards retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "boards": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Board" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Boards"],
+        "summary": "Create a new board",
+        "description": "Creates a new board with optional initial columns.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Board name"
+                  },
+                  "columns": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Optional list of column names"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Board created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "board": { "$ref": "#/components/schemas/Board" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{boardId}": {
+      "get": {
+        "tags": ["Boards"],
+        "summary": "Get a board by ID",
+        "description": "Returns a single board. Requires at least viewer role.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/boardId" }],
+        "responses": {
+          "200": {
+            "description": "Board retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "board": { "$ref": "#/components/schemas/Board" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Boards"],
+        "summary": "Update a board",
+        "description": "Updates a board's name and/or columns. Requires owner role.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/boardId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "columns": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Board updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "board": { "$ref": "#/components/schemas/Board" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Boards"],
+        "summary": "Delete a board",
+        "description": "Deletes a board and all its data. Requires owner role.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/boardId" }],
+        "responses": {
+          "200": {
+            "description": "Board deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{boardId}/tasks": {
+      "post": {
+        "tags": ["Tasks"],
+        "summary": "Create a new task",
+        "description": "Creates a new task on the specified board. Requires editor role.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/boardId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "status"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "status": {
+                    "type": "string",
+                    "description": "Column name to place the task in"
+                  },
+                  "description": { "type": "string" },
+                  "tag": {
+                    "type": "string",
+                    "nullable": true,
+                    "enum": ["technical", "concept", "design", "blocker", "marketing", "deployment", "documentation", null]
+                  },
+                  "assignees": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "subtasks": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "List of subtask titles"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "task": { "$ref": "#/components/schemas/Task" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{boardId}/tasks/{taskId}": {
+      "put": {
+        "tags": ["Tasks"],
+        "summary": "Update a task",
+        "description": "Updates a task's properties. Requires editor role.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/boardId" },
+          { "$ref": "#/components/parameters/taskId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "status": { "type": "string" },
+                  "previousStatus": { "type": "string" },
+                  "tag": {
+                    "type": "string",
+                    "nullable": true,
+                    "enum": ["technical", "concept", "design", "blocker", "marketing", "deployment", "documentation", null]
+                  },
+                  "assignees": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "subtasks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["title", "isCompleted"],
+                      "properties": {
+                        "id": { "type": "string" },
+                        "title": { "type": "string" },
+                        "isCompleted": { "type": "boolean" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "task": { "$ref": "#/components/schemas/Task" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Tasks"],
+        "summary": "Delete a task",
+        "description": "Deletes a task from the board. Requires editor role.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/boardId" },
+          { "$ref": "#/components/parameters/taskId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{boardId}/tasks/{taskId}/status": {
+      "patch": {
+        "tags": ["Tasks"],
+        "summary": "Change task status",
+        "description": "Moves a task from one column to another. Requires editor role.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/boardId" },
+          { "$ref": "#/components/parameters/taskId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["oldStatus", "newStatus"],
+                "properties": {
+                  "oldStatus": { "type": "string" },
+                  "newStatus": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "task": { "$ref": "#/components/schemas/Task" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{boardId}/tasks/{taskId}/subtasks/{subtaskId}": {
+      "patch": {
+        "tags": ["Tasks"],
+        "summary": "Toggle subtask completion",
+        "description": "Toggles the completion status of a subtask. Requires editor role.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/boardId" },
+          { "$ref": "#/components/parameters/taskId" },
+          { "$ref": "#/components/parameters/subtaskId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subtask toggled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "subtask": { "$ref": "#/components/schemas/Subtask" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{boardId}/tasks/{taskId}/assignees": {
+      "patch": {
+        "tags": ["Tasks"],
+        "summary": "Update task assignees",
+        "description": "Updates the assignees of a task. Requires editor role.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/boardId" },
+          { "$ref": "#/components/parameters/taskId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["assignees"],
+                "properties": {
+                  "assignees": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assignees updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "task": { "$ref": "#/components/schemas/Task" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{boardId}/members": {
+      "post": {
+        "tags": ["Members"],
+        "summary": "Add a member to a board",
+        "description": "Adds a member by email. If the user exists, they are added directly. If not, an email invitation is sent. Requires owner role.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/boardId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "role"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": ["editor", "viewer"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Member added or invitation sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "board": { "$ref": "#/components/schemas/Board" }
+                  },
+                  "description": "The board property is present when the user exists and is added directly. It is absent when an email invitation is sent instead."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{boardId}/members/{memberId}": {
+      "put": {
+        "tags": ["Members"],
+        "summary": "Update a member's role",
+        "description": "Changes a board member's role. Requires owner role.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/boardId" },
+          { "$ref": "#/components/parameters/memberId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["role"],
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": ["editor", "viewer"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Member role updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "board": { "$ref": "#/components/schemas/Board" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Members"],
+        "summary": "Remove a member from a board",
+        "description": "Removes a member from the board. Requires owner role.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/boardId" },
+          { "$ref": "#/components/parameters/memberId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Member removed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "board": { "$ref": "#/components/schemas/Board" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{boardId}/leave": {
+      "post": {
+        "tags": ["Members"],
+        "summary": "Leave a board",
+        "description": "Allows the current user to leave a board. Requires at least viewer role.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/boardId" }],
+        "responses": {
+          "200": {
+            "description": "Successfully left the board",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    { "name": "Health", "description": "Health check endpoint" },
+    { "name": "Auth", "description": "Authentication and user profile management" },
+    { "name": "Boards", "description": "Board CRUD operations" },
+    { "name": "Tasks", "description": "Task management within boards" },
+    { "name": "Members", "description": "Board member management" }
+  ]
+}
