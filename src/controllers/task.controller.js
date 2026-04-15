@@ -1,7 +1,7 @@
 exports.createTask = async (req, res) => {
   try {
     const board = req.board;
-    const { title, description, status, tag, assignees, subtasks } = req.body;
+    const { title, description, status, tag, assignees, subtasks, startDate, dueDate } = req.body;
 
     const column = board.columns.find((col) => col.name === status);
     if (!column) {
@@ -26,6 +26,8 @@ exports.createTask = async (req, res) => {
       status,
       tag: tag || null,
       assignees: validAssignees,
+      startDate: startDate || null,
+      dueDate: dueDate || null,
       subtasks: (subtasks || []).map((s) =>
         typeof s === "string" ? { title: s, isCompleted: false } : s
       ),
@@ -45,7 +47,7 @@ exports.updateTask = async (req, res) => {
   try {
     const board = req.board;
     const { taskId } = req.params;
-    const { title, description, status, previousStatus, tag, assignees, subtasks } = req.body;
+    const { title, description, status, previousStatus, tag, assignees, subtasks, startDate, dueDate } = req.body;
 
     // Find the task in its current column
     let task = null;
@@ -68,6 +70,8 @@ exports.updateTask = async (req, res) => {
     if (title !== undefined) task.title = title;
     if (description !== undefined) task.description = description;
     if (tag !== undefined) task.tag = tag;
+    if (startDate !== undefined) task.startDate = startDate || null;
+    if (dueDate !== undefined) task.dueDate = dueDate || null;
 
     // Validate and update assignees
     if (assignees !== undefined) {

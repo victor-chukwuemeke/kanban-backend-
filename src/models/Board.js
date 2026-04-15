@@ -32,6 +32,8 @@ const taskSchema = new mongoose.Schema({
     ],
   },
   assignees: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  startDate: { type: Date, default: null },
+  dueDate: { type: Date, default: null },
   subtasks: [subtaskSchema],
   createdAt: { type: Date, default: Date.now },
 });
