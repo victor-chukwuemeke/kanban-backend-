@@ -141,21 +141,32 @@ exports.changeStatus = async (req, res) => {
   try {
     const board = req.board;
     const { taskId } = req.params;
-    const { oldStatus, newStatus } = req.body;
+    const { newStatus } = req.body;
 
-    const sourceColumn = board.columns.find((col) => col.name === oldStatus);
     const destColumn = board.columns.find((col) => col.name === newStatus);
-
-    if (!sourceColumn) {
-      return res.status(400).json({ error: `Column "${oldStatus}" not found` });
-    }
     if (!destColumn) {
       return res.status(400).json({ error: `Column "${newStatus}" not found` });
     }
 
-    const task = sourceColumn.tasks.id(taskId);
+    // Find the task in whichever column it actually lives in
+    let task = null;
+    let sourceColumn = null;
+    for (const col of board.columns) {
+      const found = col.tasks.id(taskId);
+      if (found) {
+        task = found;
+        sourceColumn = col;
+        break;
+      }
+    }
+
     if (!task) {
       return res.status(404).json({ error: "Task not found" });
+    }
+
+    // Already in the target column — nothing to do
+    if (sourceColumn.name === newStatus) {
+      return res.json({ message: "Task status unchanged", task });
     }
 
     task.status = newStatus;
