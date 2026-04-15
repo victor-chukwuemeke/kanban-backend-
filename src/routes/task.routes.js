@@ -8,7 +8,7 @@ router.use(authenticate);
 
 router.post(
   "/:boardId/tasks",
-  requireRole("editor"),
+  requireRole("owner"),
   validate({
     title: { required: true, type: "string" },
     status: { required: true, type: "string" },
@@ -17,7 +17,7 @@ router.post(
 );
 
 router.put("/:boardId/tasks/:taskId", requireRole("editor"), taskController.updateTask);
-router.delete("/:boardId/tasks/:taskId", requireRole("editor"), taskController.deleteTask);
+router.delete("/:boardId/tasks/:taskId", requireRole("owner"), taskController.deleteTask);
 
 router.patch(
   "/:boardId/tasks/:taskId/status",
@@ -37,7 +37,7 @@ router.patch(
 
 router.patch(
   "/:boardId/tasks/:taskId/assignees",
-  requireRole("editor"),
+  requireRole("owner"),
   validate({
     assignees: { required: true, type: "array" },
   }),
