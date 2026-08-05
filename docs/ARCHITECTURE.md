@@ -30,7 +30,7 @@ flowchart LR
     Browser -->|HTTPS + JWT| Express
     Express ==>|"HOT PATH"| Mongo
     Express -->|avatars| Cloud
-    Express -->|"blocks 2.7s"| Smtp
+    Express -->|"blocks ~2s"| Smtp
 
     style Mongo fill:#c0392b,stroke:#7b241c,color:#fff
     style Express fill:#1f4e79,stroke:#12314d,color:#fff
@@ -39,7 +39,7 @@ flowchart LR
 **Compute** — one Node process. No load balancer, no horizontal scaling.
 **Storage** — MongoDB Atlas. Reads only ever go to the primary; the two secondaries are never read.
 **Cache** — *none.* No Redis, no HTTP caching. Every read hits the database.
-**Queue** — *none.* The invite email is awaited inline on the request.
+**Queue** — *none.* The invite email is awaited inline on the request (~2 s).
 
 ### What one card move actually costs
 
@@ -129,7 +129,7 @@ The collision nobody expects is the one that breaks.
 | 5 | `members[].email` never re-synced when a user changes their email | open |
 | 6 | Board list returns every task and subtask — 32 MB / 18 s for a heavy user | open |
 | 7 | `VersionError` from concurrent writes surfaces as an untyped `500` | open |
-| 8 | SMTP send blocks the invite response — 2.7 s handshake, no connection pooling | open |
+| 8 | SMTP send blocks the invite response — ~2 s handshake, no connection pooling | open |
 | 9 | Connection opened with zero options — consistency defaults inherited, never chosen | open |
 | 10 | Task `status` stored on the task *and* implied by its parent column | open |
 | 11 | 16 MB BSON limit is a hard ceiling on board size | open |

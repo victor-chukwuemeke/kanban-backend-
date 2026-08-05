@@ -1,0 +1,8 @@
+SMTP handshake cost — connect + auth only, NO message sent
+Measured because inviteMember awaits sendMail on the request path.
+
+  samples: 1926ms, 1946ms, 2016ms, 2059ms, 2122ms
+  p50:     2016ms
+
+  mailer.js sets no pool:true, so every invite opens a fresh
+  connection and pays this again before composing the message.
