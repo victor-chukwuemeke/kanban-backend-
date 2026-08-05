@@ -3,12 +3,17 @@
 **Audit subject:** the Board module, with `PATCH /api/boards/:boardId/tasks/:taskId/status`
 (the card move) as its hot path.
 
-This file holds two diagrams, each answering a different exercise question:
+Three diagrams. Two answer exercise questions; the third is supporting detail.
 
-| section | diagram | answers |
+| # | diagram | purpose |
 |---|---|---|
-| [1](#1-system-map) | System map | **1.5** — draw the architecture, mark the hot path |
-| [2](#2-why-two-people-moving-different-cards-collide) | Write collision | **5.2** — the thing hardest to explain in words |
+| 1 | System map | **answers 1.5** — draw the architecture, mark the hot path |
+| 2 | Cost of one card move | supporting detail for 3.3 — where the latency goes |
+| 3 | Write collision | **answers 5.2** — the thing hardest to explain in words |
+
+For the exercise, submit **diagram 1 for question 1.5** and **diagram 3 for question 5.2**.
+Diagram 2 exists because "three sequential round trips" is clearer as three boxes
+than as a sentence.
 
 ---
 
