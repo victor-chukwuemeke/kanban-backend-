@@ -1,0 +1,13 @@
+=== What this app actually chose (PACELC evidence) ===
+  readPreference  primary
+  readConcern     local (driver default)
+  writeConcern    w:majority (server default)
+  options passed by src/config/db.js: NONE
+command not found
+=== Topology ===
+  replica set  atlas-ylsr3p-shard-0
+  primary      ac-ijajgfv-shard-00-02.fd4ggpu.mongodb.net:27017
+  members      ac-ijajgfv-shard-00-00.fd4ggpu.mongodb.net:27017
+               ac-ijajgfv-shard-00-01.fd4ggpu.mongodb.net:27017
+               ac-ijajgfv-shard-00-02.fd4ggpu.mongodb.net:27017
+  secondaries  2 (never read from: readPreference=primary)

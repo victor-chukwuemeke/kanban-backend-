@@ -8,7 +8,12 @@ const boardRoutes = require("./routes/board.routes");
 const taskRoutes = require("./routes/task.routes");
 const memberRoutes = require("./routes/member.routes");
 
+const attachMetrics = require("./middleware/metrics");
+
 const app = express();
+
+// Read/write ratio instrumentation — no-op unless METRICS=1
+attachMetrics(app);
 
 // Middleware
 const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:3002").split(",");
@@ -46,14 +51,27 @@ app.use(
   })
 );
 
-// Global error handler
+// Unmatched API routes — without this Express replies with an HTML error page,
+// which a JSON client cannot parse.
+app.use("/api", (req, res) => {
+  res.status(404).json({ error: `Cannot ${req.method} ${req.originalUrl}` });
+});
+
+// Global error handler.
+// Previously any error carrying a .message was reported as 400, which blamed the
+// client for server-side faults and made the 500 branch unreachable. Only errors
+// that actually declare a client-facing status get one.
 app.use((err, _req, res, _next) => {
   if (err.name === "MulterError") {
     return res.status(400).json({ error: err.message });
   }
-  if (err.message) {
-    return res.status(400).json({ error: err.message });
+
+  const status = err.statusCode || err.status;
+  if (status && status >= 400 && status < 500) {
+    return res.status(status).json({ error: err.message });
   }
+
+  console.error("Unhandled error:", err);
   res.status(500).json({ error: "Internal server error" });
 });
 

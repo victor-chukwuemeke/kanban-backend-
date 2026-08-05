@@ -1,0 +1,25 @@
+Round-trip time to Atlas from this machine (25 pings):
+  p50 301.4ms   p99 1157.0ms   min 149.7ms
+
+  Every request makes at least 3 SEQUENTIAL round trips:
+    1. authenticate  -> users.findOne
+    2. requireRole   -> boards.findOne
+    3. the operation -> boards.updateOne
+  Floor for any write: ~904ms before doing any work.
+Database   kanban_audit
+Boards     5015
+Indexes    _id_, userId_1, members.userId_1
+Runs       25 per query
+
+query                                    min      p50      p99      max
+───────────────────────────────────────────────────────────────────────
+load + mutate + save  (card move)     320.0ms   382.0ms  1849.2ms  1849.2ms
+Board.updateMany  members.userId      140.5ms   194.4ms   559.0ms   559.0ms
+Board.find  $or  (board list)         155.1ms   187.4ms   298.1ms   298.1ms
+Board.findById  (requireRole)         146.4ms   186.6ms   300.0ms   300.0ms
+
+  load + mutate + save  (card move)  —  PATCH .../status  end to end
+  Board.updateMany  members.userId  —  avatar / profile fan-out
+  Board.find  $or  (board list)  —  GET /api/boards
+  Board.findById  (requireRole)  —  runs before EVERY request
+

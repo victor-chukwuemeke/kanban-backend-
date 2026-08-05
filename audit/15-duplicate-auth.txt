@@ -1,0 +1,6 @@
+Router mounting in app.js — all three at /api/boards:
+
+  1 x users.findOne   GET  /api/boards            (boardRoutes: 1st router)
+  1 x users.findOne   GET  /api/boards/:id        (boardRoutes: 1st router)
+  2 x users.findOne   PATCH /:id/tasks/:t/status  (taskRoutes: 2nd router)
+  3 x users.findOne   PUT  /:id/members/:m        (memberRoutes: 3rd router)

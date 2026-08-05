@@ -1,0 +1,47 @@
+
+Database          kanban_audit
+Boards            5015
+Indexes on boards _id_, userId_1, members.userId_1
+
+────────────────────────────────────────────────────────────────
+GET /api/boards  —  board list
+────────────────────────────────────────────────────────────────
+  query              {"$or":[{"userId":"6a71d75ca2fc8a615afbab21"},{"members.userId":"6a71d75ca2fc8a615afbab21"}]}
+  plan               IXSCAN    ← index scan
+  stages             SUBPLAN → FETCH → OR → IXSCAN → IXSCAN
+  index used         userId_1 + members.userId_1
+  docs examined      15
+  keys examined      30
+  docs returned      15
+  examined:returned  1.0:1
+  execution time     0 ms
+
+────────────────────────────────────────────────────────────────
+requireRole  —  Board.findById
+────────────────────────────────────────────────────────────────
+  query              {"_id":"6a71d92ea2fc8a615afbab2b"}
+  plan               EXPRESS_IXSCAN
+  stages             EXPRESS_IXSCAN
+  index used         _id_
+  docs examined      1
+  keys examined      1
+  docs returned      1
+  examined:returned  1.0:1
+  execution time     0 ms
+
+────────────────────────────────────────────────────────────────
+syncAvatarAcrossBoards  —  updateMany filter
+────────────────────────────────────────────────────────────────
+  query              {"members.userId":"6a71d75ca2fc8a615afbab21"}
+  plan               IXSCAN    ← index scan
+  stages             FETCH → IXSCAN
+  index used         members.userId_1
+  docs examined      15
+  keys examined      15
+  docs returned      15
+  examined:returned  1.0:1
+  execution time     0 ms
+
+────────────────────────────────────────────────────────────────
+Save this output before changing anything.
+

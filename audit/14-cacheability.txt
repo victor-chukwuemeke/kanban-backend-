@@ -1,0 +1,6 @@
+Database operations during the 963-request session
+
+collection   reads  writes   read:write   ops
+-------------------------------------------------------------
+users     1369       0       1369:0   findOne x1369
+boards     964     405        2.4:1   findOne x903, updateOne x405, find x61

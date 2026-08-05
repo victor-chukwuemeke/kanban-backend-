@@ -1,0 +1,11 @@
+BEFORE
+  users collection   : james@mailinator.com
+  board.members[0]   : james@mailinator.com
+
+PUT /api/auth/me  -> 200   (new email: changed-1785849899096@mailinator.com)
+
+AFTER
+  users collection   : changed-1785849899096@mailinator.com
+  board.members[0]   : james@mailinator.com
+
+  -> STALE. The board still shows the old address. No TTL will fix it.

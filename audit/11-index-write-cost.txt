@@ -1,0 +1,32 @@
+Database kanban_audit
+Indexes on users: _id_, email_1, username_1
+Inserting 3000 users per run.
+
+  round 1/5  round 2/5  round 3/5  round 4/5  round 5/5
+
+  with index    375, 415, 323, 353, 335 ms
+  without index 370, 311, 332, 484, 327 ms
+
+──────────────────────────────────────────────────────────
+  median with username_1     353 ms
+  median without it          332 ms
+  run-to-run spread          173 ms
+──────────────────────────────────────────────────────────
+  apparent cost              21 ms for 3000 inserts  (+6.3%)
+  per insert                 0.007 ms
+
+  NOT RELIABLE. The difference (21ms) is smaller than the
+  run-to-run spread (173ms). Against a remote Atlas cluster the
+  network dominates what an index costs per document. The honest
+  conclusion is that the write cost of this index is too small to
+  measure from here, not that it is zero.
+
+Who would notice if it were dropped:
+  Nobody, for reads — $indexStats shows 0 queries served.
+  Everybody, eventually, for correctness — it is the UNIQUE
+  constraint on username. Drop it and two people can register
+  the same name. That is a behaviour change, not a tuning one.
+
+Indexes restored: _id_, email_1, username_1
+Temporary users removed: 0 remaining
+

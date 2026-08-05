@@ -1,0 +1,78 @@
+Database kanban_audit — 5015 boards
+Query    {"$or":[{"userId":"6a71d75ca2fc8a615afbab21"},{"members.userId":"6a71d75ca2fc8a615afbab21"}]}
+
+==================================================================
+
+A · no indexes at all
+  indexes present   (none)
+  plan chosen       COLLSCAN
+  index actually used  none
+  docs examined     5015  ->  returned 15
+
+B · ONE COMPOUND index { userId: 1, 'members.userId': 1 }
+    the intuitive choice: two fields, one index
+  indexes present   userId_1_members.userId_1
+  plan chosen       COLLSCAN
+  index actually used  none
+  docs examined     5015  ->  returned 15
+
+C · TWO SEPARATE indexes { userId } and { members.userId }
+  indexes present   userId_1, members.userId_1
+  plan chosen       IXSCAN
+  index actually used  userId_1 + members.userId_1
+  docs examined     15  ->  returned 15
+
+==================================================================
+
+What happened
+
+  A  no index          COLLSCAN  examined 5015
+  B  compound index    COLLSCAN  examined 5015
+  C  two separate      IXSCAN    examined 15
+
+  B built an index and gained NOTHING. Identical plan to having no index
+  at all. It still pays the write cost on every insert and update.
+
+  Reason: each branch of an $or needs its own usable index. A compound
+  index on {userId, members.userId} can serve a query on userId (it is
+  the leading field) but NOT one on members.userId alone. One branch is
+  unservable, so MongoDB abandons the index and scans the collection.
+
+Board list order, NO sort clause in the query
+
+  with COLLSCAN (no index):
+    1. A
+    2. B
+    3. C
+    4. D
+    5. E
+    6. F
+
+  with IXSCAN (after adding indexes):
+    1. A
+    2. B
+    3. C
+    4. D
+    5. E
+    6. F
+
+  identical order? yes
+Indexes present: userId_1, members.userId_1 (no createdAt index)
+
+  no sort clause (what your code does today)
+    stages         SUBPLAN -> FETCH -> OR -> IXSCAN -> IXSCAN
+    docs examined  15  -> returned 15
+    in-memory sort no
+
+  sorted by createdAt, newest first
+    stages         SUBPLAN -> SORT -> FETCH -> OR -> IXSCAN -> IXSCAN
+    docs examined  15  -> returned 15
+    in-memory sort YES - MongoDB sorted these itself
+
+Added {userId,createdAt} and {members.userId,createdAt} — indexes that
+cover BOTH the filter and the sort for each branch.
+
+  stages         SUBPLAN -> FETCH -> SORT_MERGE -> IXSCAN -> IXSCAN
+  in-memory sort gone - index provided the order
+
+(experimental indexes removed)

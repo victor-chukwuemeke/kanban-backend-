@@ -1,0 +1,52 @@
+Boards in collection: 5015
+
+──────────────────────────────────────────────────────────────────
+GET /api/boards today — no pagination, no projection
+──────────────────────────────────────────────────────────────────
+  boards returned   15
+  tasks inside them 13
+  response payload  11.3 KB
+  per board         0.8 KB
+
+  Every task and subtask ships to render a sidebar list of names.
+  At 5015 boards that response would be ~4 MB.
+
+──────────────────────────────────────────────────────────────────
+OFFSET pagination — .skip(n).limit(20) over all boards
+──────────────────────────────────────────────────────────────────
+    page    skip   examined  returned    time
+       1       0         20        20     0ms
+      26     500        520        20     0ms
+     101    2000       2020        20     1ms
+     251    5000       5015        15     3ms
+
+  Page 1 examines 20 to return 20.
+  Page 251 examines 5015 to return 15 — 5000 documents read and thrown away.
+
+──────────────────────────────────────────────────────────────────
+KEYSET pagination — .find({_id: {$gt: lastSeen}}).limit(20)
+──────────────────────────────────────────────────────────────────
+    page   examined  returned    time
+       1         20        20     0ms
+       2         20        20     0ms
+       3         20        20     0ms
+       4         15        15     0ms
+
+  Constant. Keyset never walks past rows it has already served —
+  it jumps straight into the index at the last id it saw.
+
+──────────────────────────────────────────────────────────────────
+Caveat: this app embeds tasks INSIDE board documents, so neither
+technique paginates tasks. Paginating an array needs $slice or a
+schema change — that limit is structural, not a missing feature.
+
+GET /api/boards for a user who belongs to many boards
+
+  boards returned    5000
+  tasks inside them  75000
+  response payload   32.1 MB
+  query time         18364 ms
+
+  This is one HTTP response, to render a list of board names.
+
+  With .select("name") instead: 297 KB  (111x smaller)

@@ -1,0 +1,36 @@
+Database: kanban_audit
+
+────────────────────────────────────────────────────────────────
+boards  (5015 documents)
+────────────────────────────────────────────────────────────────
+       0 reads   _id_  <- never used to serve a read
+       1 reads   members.userId_1
+       1 reads   userId_1
+
+────────────────────────────────────────────────────────────────
+pendinginvites  (0 documents)
+────────────────────────────────────────────────────────────────
+       0 reads   email_1_boardId_1  [unique]  <- never used to serve a read
+       0 reads   token_1  [unique]  <- never used to serve a read
+       0 reads   _id_  <- never used to serve a read
+       0 reads   expiresAt_1  [TTL]  <- never used to serve a read
+
+────────────────────────────────────────────────────────────────
+users  (2 documents)
+────────────────────────────────────────────────────────────────
+       0 reads   _id_  <- never used to serve a read
+       0 reads   username_1  [unique]  <- never used to serve a read
+       9 reads   email_1  [unique]
+
+────────────────────────────────────────────────────────────────
+Indexes with zero reads
+────────────────────────────────────────────────────────────────
+  pendinginvites.email_1_boardId_1
+      enforces uniqueness — dropping it changes behaviour, not just speed
+  pendinginvites.token_1
+      enforces uniqueness — dropping it changes behaviour, not just speed
+  pendinginvites.expiresAt_1
+      drives expiry — not used for reads by design
+  users.username_1
+      enforces uniqueness — dropping it changes behaviour, not just speed
+

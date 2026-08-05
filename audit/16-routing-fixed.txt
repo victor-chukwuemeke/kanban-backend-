@@ -1,0 +1,14 @@
+AFTER FIX
+
+  1 x users.findOne   [200]  GET  /api/boards          (1st router)
+  1 x users.findOne   [404]  PATCH /:id/tasks/../status (2nd router)
+  1 x users.findOne   [404]  PUT  /:id/members/:m      (3rd router)
+
+404 now returns JSON:
+  [404] {"error":"Cannot GET /api/does-not-exist"}
+PATCH /tasks/:id/status  AFTER removing the duplicate auth lookup
+  n    25
+  p50  1379ms      (was 779ms with the duplicate lookup)
+  p95  2631ms      (was 1490ms)
+  p99  4668ms      (was 2743ms)
+  mean 1520ms      (was 875ms)

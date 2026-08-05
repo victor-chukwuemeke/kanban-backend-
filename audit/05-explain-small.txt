@@ -1,0 +1,51 @@
+[dotenv@17.3.1] injecting env (14) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+
+Database          kanban_audit
+Boards            15
+Indexes on boards _id_
+
+⚠  Only 15 boards. A scan over this many documents is instant and
+   proves nothing. Run scripts/seed.js first.
+
+────────────────────────────────────────────────────────────────
+GET /api/boards  —  board list
+────────────────────────────────────────────────────────────────
+  query              {"$or":[{"userId":"6a71d75ca2fc8a615afbab21"},{"members.userId":"6a71d75ca2fc8a615afbab21"}]}
+  plan               COLLSCAN  ← full collection scan
+  stages             SUBPLAN → COLLSCAN
+  index used         none
+  docs examined      15
+  keys examined      0
+  docs returned      15
+  examined:returned  1.0:1
+  execution time     0 ms
+
+────────────────────────────────────────────────────────────────
+requireRole  —  Board.findById
+────────────────────────────────────────────────────────────────
+  query              {"_id":"6a71d92ea2fc8a615afbab2b"}
+  plan               EXPRESS_IXSCAN
+  stages             EXPRESS_IXSCAN
+  index used         _id_
+  docs examined      1
+  keys examined      1
+  docs returned      1
+  examined:returned  1.0:1
+  execution time     2 ms
+
+────────────────────────────────────────────────────────────────
+syncAvatarAcrossBoards  —  updateMany filter
+────────────────────────────────────────────────────────────────
+  query              {"members.userId":"6a71d75ca2fc8a615afbab21"}
+  plan               COLLSCAN  ← full collection scan
+  stages             COLLSCAN
+  index used         none
+  docs examined      15
+  keys examined      0
+  docs returned      15
+  examined:returned  1.0:1
+  execution time     0 ms
+
+────────────────────────────────────────────────────────────────
+Save this output before changing anything.
+

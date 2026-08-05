@@ -1,0 +1,38 @@
+
+Board: "A"
+Columns: Todo, Doing, Done, Testing
+Tasks: 13
+
+─── Test A · 6 DIFFERENT cards moved simultaneously ───
+    (unrelated tasks — nothing is logically shared but the board)
+
+  Result
+    fired:     6 concurrent requests
+    succeeded: 4
+    failed:    2
+    statuses:  {"200":4,"500":2}
+    latency:   min 773ms · median 1041ms · max 2539ms
+    error body: {"error":"Server error"}
+    tasks before 13 → after 13  (none lost)
+
+─── Test B · the SAME card moved by two users at once ───
+
+  Result
+    fired:     2 concurrent requests
+    succeeded: 2
+    failed:    0
+    statuses:  {"200":2}
+    latency:   min 395ms · median 395ms · max 395ms
+
+─── What this shows ───
+    2/6 unrelated card moves failed. The board
+    document is the unit of contention, not the task.
+    Mongoose guards the array writes with __v, so the losers are rejected
+    rather than silently clobbering — but they surface as a bare 500.
+
+ENOENT: no such file or directory, open 'C:\tmp\creds.txt'
+both handlers loaded the board at __v = 58 / 58
+handler A moves: wfwefwfw
+handler B moves: new wine   <- a DIFFERENT card
+  save A -> OK
+  save B -> VersionError: No matching document found for id "6a71d92ea2fc8a615afbab2b" version 58 modifiedPaths "columns, columns.0, columns.0.tasks, columns.1, columns.1.tasks"
