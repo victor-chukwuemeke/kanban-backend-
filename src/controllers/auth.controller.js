@@ -148,7 +148,7 @@ exports.updateAvatar = async (req, res) => {
     await User.findByIdAndUpdate(req.user._id, { avatar: avatarUrl });
     await syncAvatarAcrossBoards(req.user._id, avatarUrl);
 
-    res.json({ avatar: avatarUrl });
+    res.json({ message: "Avatar updated successfully", avatar: avatarUrl });
   } catch (error) {
     res.status(500).json({ error: "Failed to upload avatar" });
   }

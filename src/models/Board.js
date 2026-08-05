@@ -51,6 +51,12 @@ const boardSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+// The board list runs $or: [{userId}, {"members.userId"}]. Without both of these
+// it is a full collection scan on the busiest read in the app, and the same
+// members.userId filter is reused by the avatar fan-out on every profile change.
+boardSchema.index({ userId: 1 });
+boardSchema.index({ "members.userId": 1 });
+
 boardSchema.set("toJSON", {
   transform: (_doc, ret) => {
     ret.id = ret._id;
