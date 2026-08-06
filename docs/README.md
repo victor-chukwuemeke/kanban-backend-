@@ -9,7 +9,8 @@ the card move — as its hot path.
 | | |
 |---|---|
 | **[QUERIES.md](QUERIES.md)** | Every query the module runs, with its plan before and after. Includes the index that looked correct and did nothing, the `$or` sorting result, the N+1 in signup, and the pagination measurements. |
-| **[ARCHITECTURE.md](ARCHITECTURE.md)** | System map (question 1.5) and the write-collision sequence diagram (question 5.2). |
+| **[ARCHITECTURE.md](ARCHITECTURE.md)** | System map (question 1.5) and the write-collision sequence diagram (question 5.2). Findings table at the end. |
+| **[REMEDIATION.md](REMEDIATION.md)** | Every open finding with a proposed fix, its cost, and why it hasn't shipped. Ordered by value against effort. |
 | **[adr/0001-user-cache-invalidation.md](adr/0001-user-cache-invalidation.md)** | Architecture Decision Record — why the user cache uses TTL expiry rather than delete-on-write. |
 | **[../audit/](../audit/)** | Raw measurement output. Every number quoted in the write-up traces back to a file here. |
 

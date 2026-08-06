@@ -135,3 +135,4 @@ The collision nobody expects is the one that breaks.
 | 11 | 16 MB BSON limit is a hard ceiling on board size | open |
 
 Evidence for each is in [`audit/`](../audit/).
+Proposed fixes for the open ones, with costs, are in [REMEDIATION.md](REMEDIATION.md).
